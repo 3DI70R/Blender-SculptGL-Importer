@@ -1,6 +1,6 @@
 # Blender SculptGL Importer
 
-Simple importer script for Blender, which can import models from original SculptGL .sgl files.
+Simple importer script for Blender, which can import models from original SculptGL .sgl files.  
 Main goal of this script, to give ability to Import model with PBR data, which you currently cannot export from SculptGL.
 
 ![Colors image](pbrdemo.jpg)
