@@ -1,18 +1,12 @@
 # Blender SculptGL Importer
 
-Simple importer script for Blender, that can import models from SculptGL files (.sgl) with color and PBR information
+Simple importer script for Blender, which can import models from original SculptGL .sgl files.
+Main goal of this script, to give ability to Import model with PBR data, which you currently cannot export from SculptGL.
 
 ![Colors image](pbrdemo.jpg)
 
-### Currently supports:
-- .sgl Version 3
-- Triangle meshes
-- **Color** information
-- **PBR** information
-
-### Does not supports:
-- UV
-- Quad Meshes
+Supports all of the features of original .sgl format (ver 3).
+I didn't tested it much, but any model of correct version should load just fine, if not, load old version to SculptGL and save it again.
 
 Color and PBR information stored in vertex colors  
 ![Colors image](colors.png)
@@ -21,8 +15,6 @@ PBR channel mapping is:
 - **Red**: Roughness
 - **Green**: Metallic
 - **Blue**: Masking (From masking tool, not related to PBR, but original file stores mask in same array)
-
-I didn't tested it much, but seems like any model sculpted from scratch in current version will load just fine.
 
 # Installation info
 - Download Zip of this repository
