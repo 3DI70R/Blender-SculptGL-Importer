@@ -36,9 +36,11 @@ bl_info = {
     "version": (1, 0, 0),
     "blender": (2, 77, 0),
     "location": "File > Import-Export",
-    "description": "Import SGL, Import SGL mesh, colors and PBR data",
+    "description": "Import SGL mesh, colors and PBR data",
     "warning": "",
     "category": "Import-Export"}
+
+triangleIndex = 4294967295
 
 def readInt(file):
     return struct.unpack("I", file.read(4))[0]
@@ -53,6 +55,9 @@ def readArray(file, count, func):
         result.append(func(file))
     
     return result
+
+def skip(file, count):
+	file.seek(count, os.SEEK_CUR)
 
 def readFile(filePath):
     
@@ -102,9 +107,12 @@ def readFile(filePath):
             faceCount = readInt(f)
             mesh["faces"] = readArray(f, faceCount, lambda file: readArray(file, 4, readInt))
 
-            # TODO: UV
-            # TODO: Face UV
-            
+            uvCount = readInt(f)
+            mesh["uv"] = readArray(f, uvCount, lambda file: readArray(file, 2, readFloat))
+
+            faceUvCount = readInt(f)
+            mesh["face_uv"] = readArray(f, faceUvCount, lambda file: readArray(file, 4, readInt))
+
             meshes.append(mesh)
 
         return result
@@ -115,8 +123,9 @@ def createSglMesh(sgl):
     for i, sglMesh in enumerate(sgl["meshes"]):
         
         name = "SGLMesh" + str(i)
+
         scale = sglMesh["scale"]
-        position = sglMesh["position"] 
+        position = sglMesh["position"]
         
         mesh = bpy.data.meshes.new(name)
         obj = bpy.data.objects.new(name, mesh)
@@ -130,9 +139,12 @@ def createSglMesh(sgl):
         
         colorLayer = bm.loops.layers.color.new("Color")
         pbrLayer = bm.loops.layers.color.new("PBR")
+        uvLayer = bm.loops.layers.uv.new("UV")
         
         sglColors = sglMesh["colors"]
         sglMaterials = sglMesh["materials"]
+        sglUv = sglMesh["uv"]
+        sglFaceUv = sglMesh["face_uv"]
 
         for v in sglMesh["vertices"]:
             vertices.append(bm.verts.new(v))
@@ -140,14 +152,23 @@ def createSglMesh(sgl):
         bm.verts.index_update()
         smooth = not sglMesh["flatShading"]
             
-        for f in sglMesh["faces"]:
-            face = bm.faces.new((vertices[f[0]], vertices[f[1]], vertices[f[2]]))
+        for faceIndex, f in enumerate(sglMesh["faces"]):
+
+            if f[3] == triangleIndex:
+                faceVertices = (vertices[f[0]], vertices[f[1]], vertices[f[2]])
+            else:
+                faceVertices = (vertices[f[0]], vertices[f[1]], vertices[f[2]], vertices[f[3]])
+
+            face = bm.faces.new(faceVertices)
             face.smooth = smooth
             
-            for l in face.loops:
+            for loopIndex, l in enumerate(face.loops):
                 vertId = l.vert.index
                 l[colorLayer] = sglColors[vertId]
                 l[pbrLayer] = sglMaterials[vertId]
+
+                if len(sglUv) != 0:
+                    l[uvLayer].uv = sglUv[sglFaceUv[faceIndex][loopIndex]]
             
         bm.to_mesh(bpy.context.object.data)  
         bm.free()
