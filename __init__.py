@@ -59,6 +59,10 @@ def readArray(file, count, func):
 def skip(file, count):
 	file.seek(count, os.SEEK_CUR)
 
+def distinct(seq):
+  seen = set()
+  return [x for x in seq if x not in seen and not seen.add(x)]
+
 def readFile(filePath):
     
     result = {}
@@ -159,16 +163,20 @@ def createSglMesh(sgl):
             else:
                 faceVertices = (vertices[f[0]], vertices[f[1]], vertices[f[2]], vertices[f[3]])
 
-            face = bm.faces.new(faceVertices)
-            face.smooth = smooth
-            
-            for loopIndex, l in enumerate(face.loops):
-                vertId = l.vert.index
-                l[colorLayer] = sglColors[vertId]
-                l[pbrLayer] = sglMaterials[vertId]
+			# SculptGL can write glitchy face with duplicate vertices
+            faceVertices = distinct(faceVertices)
 
-                if len(sglUv) != 0:
-                    l[uvLayer].uv = sglUv[sglFaceUv[faceIndex][loopIndex]]
+            if len(faceVertices) >= 3:
+                face = bm.faces.new(faceVertices)
+                face.smooth = smooth
+                
+                for loopIndex, l in enumerate(face.loops):
+                    vertId = l.vert.index
+                    l[colorLayer] = sglColors[vertId]
+                    l[pbrLayer] = sglMaterials[vertId]
+
+                    if len(sglUv) != 0:
+                        l[uvLayer].uv = sglUv[sglFaceUv[faceIndex][loopIndex]]
             
         bm.to_mesh(bpy.context.object.data)  
         bm.free()
