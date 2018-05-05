@@ -56,6 +56,12 @@ def readArray(file, count, func):
     
     return result
 
+def readVertex(file):
+	x = readFloat(file)
+	y = readFloat(file)
+	z = readFloat(file)
+	return [x, -z, y]
+
 def skip(file, count):
 	file.seek(count, os.SEEK_CUR)
 
@@ -100,7 +106,7 @@ def readFile(filePath):
             mesh["scale"] = readFloat(f)
             
             vertexCount = readInt(f)
-            mesh["vertices"] = readArray(f, vertexCount, lambda file: readArray(file, 3, readFloat))
+            mesh["vertices"] = readArray(f, vertexCount, lambda file: readVertex(file))
             
             colorCount = readInt(f)
             mesh["colors"] = readArray(f, colorCount, lambda file: readArray(file, 3, readFloat))
