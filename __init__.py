@@ -33,12 +33,13 @@ from bpy.props import StringProperty
 bl_info = {
     "name": "SculptGL .sgl format",
     "author": "3DI70R",
-    "version": (1, 0, 0),
-    "blender": (2, 77, 0),
+    "version": (1, 1, 0),
+    "blender": (2, 80, 0),
     "location": "File > Import-Export",
     "description": "Import SGL mesh, colors and PBR data",
     "warning": "",
-    "category": "Import-Export"}
+    "category": "Import-Export"
+}
 
 triangleIndex = 4294967295
 
@@ -49,12 +50,18 @@ def readFloat(file):
     return struct.unpack("f", file.read(4))[0]
 
 def readArray(file, count, func):
-    result = []
+    result = [None] * count
     
     for i in range(count):
-        result.append(func(file))
+        result[i] = func(file)
     
     return result
+    
+def readColor(file):
+    r = readFloat(file)
+    g = readFloat(file)
+    b = readFloat(file)
+    return [r, g, b, 1]
 
 def readVertex(file):
 	x = readFloat(file)
@@ -109,10 +116,10 @@ def readFile(filePath):
             mesh["vertices"] = readArray(f, vertexCount, lambda file: readVertex(file))
             
             colorCount = readInt(f)
-            mesh["colors"] = readArray(f, colorCount, lambda file: readArray(file, 3, readFloat))
+            mesh["colors"] = readArray(f, colorCount, lambda file: readColor(file))
             
             materialCount = readInt(f)
-            mesh["materials"] = readArray(f, materialCount, lambda file: readArray(file, 3, readFloat))
+            mesh["materials"] = readArray(f, materialCount, lambda file: readColor(file))
             
             faceCount = readInt(f)
             mesh["faces"] = readArray(f, faceCount, lambda file: readArray(file, 4, readInt))
@@ -129,6 +136,7 @@ def readFile(filePath):
     
 def createSglMesh(sgl):
     scene = bpy.context.scene
+    view_layer = bpy.context.view_layer
 
     for i, sglMesh in enumerate(sgl["meshes"]):
         
@@ -141,8 +149,8 @@ def createSglMesh(sgl):
         obj = bpy.data.objects.new(name, mesh)
         obj.scale = (scale, scale, scale)
 
-        scene.objects.link(obj)
-        scene.objects.active = obj
+        scene.collection.objects.link(obj)
+        view_layer.objects.active = obj
 
         bm = bmesh.new()
         vertices = []
@@ -206,15 +214,13 @@ class ImportSGL(Operator, ImportHelper):
 def menu_func_import(self, context):
     self.layout.operator(ImportSGL.bl_idname, text="SculptGL (.sgl)")
 
-
 def register():
     bpy.utils.register_class(ImportSGL)
-    bpy.types.INFO_MT_file_import.append(menu_func_import)
-
+    bpy.types.TOPBAR_MT_file_import.append(menu_func_import)
 
 def unregister():
    bpy.utils.unregister_class(ImportSGL)
-   bpy.types.INFO_MT_file_import.remove(menu_func_import)
+   bpy.types.TOPBAR_MT_file_import.remove(menu_func_import)
 
 if __name__ == "__main__":
     register()
